@@ -1,5 +1,4 @@
 import requests
-import str2bool
 from rest_framework.request import Request
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
@@ -8,7 +7,7 @@ from django.core.validators import URLValidator
 from django.db import IntegrityError
 from django.db.models import Q, Sum, F
 from django.http import JsonResponse
-from requests import get
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -16,7 +15,9 @@ from rest_framework.views import APIView
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
 
-from backend.models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
+from backend.strbool import strbool
+
+from backend.models import User, Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
     Contact, ConfirmEmailToken
 from backend.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderItemSerializer, OrderSerializer, ContactSerializer
@@ -397,71 +398,92 @@ class BasketView(APIView):
 
 class PartnerUpdate(APIView):
     """
-    A class for updating partner information.
+    Класс для обновления информации о партнере.
 
-    Methods:
-    - post: Update the partner information.
+    Методы:
+    POST: Обновляет информацию о партнере.
 
-    Attributes:
-    - None
+    Параметры:
+    Запрашивает данные из YAML-файла и создает или обновляет магазин и список его продуктов.
+
+    Заголовок запроса с логином пользователя: "Authorization: Token {auth_token}" и Content-Type: "application/json"
+
+    Тело запроса с url-адресом YAML-файла со списком продуктов:
+
+    Например: {
+    url: https://raw.githubusercontent.com/netology-code/py-homework-11-part1/master/products.yaml
+    }
     """
 
     def post(self, request, *args, **kwargs):
         """
-                Update the partner price list information.
+        Создает или обновляет магазин и список его продуктов.
 
-                Args:
-                - request (Request): The Django request object.
+        Возвращает:
+        - JsonResponse: Статус операции и ошибки.
+        """
 
-                Returns:
-                - JsonResponse: The response indicating the status of the operation and any errors.
-                """
         if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+            return Response({'Status': False, 'Error': 'Log in required'}, status=status.HTTP_403_FORBIDDEN)
 
         if request.user.type != 'shop':
-            return JsonResponse({'Status': False, 'Error': 'Только для магазинов'}, status=403)
+            return Response({'Status': False, 'Error': 'Только для магазинов'}, status=status.HTTP_403_FORBIDDEN)
 
         url = request.data.get('url')
-        if url:
-            validate_url = URLValidator()
-            try:
-                validate_url(url)
-            except ValidationError as e:
-                return JsonResponse({'Status': False, 'Error': str(e)})
-            else:
-                stream = get(url).content
-
-                data = load_yaml(stream, Loader=Loader)
-
-    
-
-                shop, _ = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
-                for category in data['categories']:
-                    category_object, _ = Category.objects.get_or_create(id=category['id'], name=category['name'])
-                    category_object.shops.add(shop.id)
-                    category_object.save()
-                ProductInfo.objects.filter(shop_id=shop.id).delete()
-                for item in data['goods']:
-
-                    product, _ = Product.objects.get_or_create(name=item['name'], category_id=item['category'])
-
-                    product_info = ProductInfo.objects.create(product_id=product.id,
-                                                              external_id=item['id'],
-                                                              model=item['model'],
-                                                              price=item['price'],
-                                                              price_rrc=item['price_rrc'],
-                                                              quantity=item['quantity'],
-                                                              shop_id=shop.id)
-                    for name, value in item['parameters'].items():
-                        parameter_object, _ = Parameter.objects.get_or_create(name=name)
-                        ProductParameter.objects.create(product_info_id=product_info.id,
-                                                        parameter_id=parameter_object.id,
-                                                        value=value)
-
-                return JsonResponse({'Status': True})
+        if not url:
+            return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=status.HTTP_400_BAD_REQUEST)
         
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+        validate_url = URLValidator()
+        try:
+            validate_url(url)
+        except ValidationError as e:
+            return Response({'Status': False, 'Error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            stream = response.content
+
+            data = load_yaml(stream, Loader=Loader)
+
+            shop, _ = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
+            for category in data['categories']:
+                category_object, _ = Category.objects.update_or_create(
+                    id=category['id'],
+                    defaults={'name': category['name']}
+                )
+                category_object.shops.add(shop)
+                category_object.save()
+
+            ProductInfo.objects.filter(shop_id=shop.id).delete()
+            for item in data['goods']:
+                product, _ = Product.objects.get_or_create(name=item['name'], category_id=item['category'])
+
+                product_info = ProductInfo.objects.create(
+                    product=product,
+                    external_id=item['id'],
+                    model=item['model'],
+                    price=item['price'],
+                    price_rrc=item['price_rrc'],
+                    quantity=item['quantity'],
+                    shop=shop
+                )
+
+                for name, value in item['parameters'].items():
+                    parameter_object, _ = Parameter.objects.get_or_create(name=name)
+                    ProductParameter.objects.create(
+                        product_info=product_info,
+                        parameter=parameter_object,
+                        value=value
+                    )
+
+            return Response({'Status': True}, status=status.HTTP_201_CREATED)
+
+        except requests.exceptions.RequestException as e:
+            return Response({'Status': False, 'Error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({'Status': False, 'Error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PartnerState(APIView):
@@ -514,7 +536,7 @@ class PartnerState(APIView):
         state = request.data.get('state')
         if state:
             try:
-                Shop.objects.filter(user_id=request.user.id).update(state=str2bool(state))
+                Shop.objects.filter(user_id=request.user.id).update(state=strbool(state))
                 return JsonResponse({'Status': True})
             except ValueError as error:
                 return JsonResponse({'Status': False, 'Errors': str(error)})
@@ -740,3 +762,23 @@ class OrderView(APIView):
                         return JsonResponse({'Status': True})
 
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+
+
+class ChangeUserType(APIView):
+
+
+    def post(self, request):
+
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+
+        user = request.user
+        if user.type == 'buyer':
+            user.type = 'shop'
+            user.save()
+            return JsonResponse({'status': 'success', 'message': 'User status updated to shop'})
+        else:
+            user.type = 'buyer'
+            user.save()
+            return JsonResponse({'status': 'success', 'message': 'User status updated to buyer'})
+    
