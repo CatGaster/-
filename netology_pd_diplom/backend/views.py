@@ -1,3 +1,4 @@
+import json
 import requests
 from rest_framework.request import Request
 from django.contrib.auth import authenticate
@@ -256,7 +257,7 @@ class ProductInfoView(APIView):
         if category_id:
             query = query & Q(product__category_id=category_id)
 
-        # фильтруем и отбрасываем дуликаты
+        # фильтруем и отбрасываем дубликаты
         queryset = ProductInfo.objects.filter(
             query).select_related(
             'shop', 'product__category').prefetch_related(
@@ -317,7 +318,18 @@ class BasketView(APIView):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
-        items = request.data.get('items')
+        # Проверяем тип контента
+        if request.content_type == 'application/json':
+            # Если контент JSON, получаем данные напрямую
+            items = request.data.get('items')
+        else:
+            # Если контент form-data, извлекаем строку и парсим в JSON
+            items_str = request.POST.get('items')
+            try:
+                items = json.loads(items_str) if items_str else []
+            except json.JSONDecodeError:
+                return JsonResponse({'Status': False, 'Errors': 'Invalid JSON format in form-data'}, status=400)
+
         if items:
             basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
             objects_created = 0

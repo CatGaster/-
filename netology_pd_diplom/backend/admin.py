@@ -20,12 +20,14 @@ class CustomUserAdmin(UserAdmin):
         }),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
-    list_display = ('email', 'first_name', 'last_name', 'is_staff')
+    list_display = ('email', 'first_name', 'last_name', 'is_staff','is_active')
 
 
 @admin.register(Shop)
 class ShopAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('name', 'url', 'user', 'state')
+    search_fields = ('name', 'user__email')
+    list_filter = ('state',)
 
 
 @admin.register(Category)
@@ -40,8 +42,9 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductInfo)
 class ProductInfoAdmin(admin.ModelAdmin):
-    pass
-
+    list_display = ('model', 'product', 'shop', 'quantity', 'price', 'price_rrc')
+    search_fields = ('model', 'product__name', 'shop__name')
+    list_filter = ('shop', 'product')
 
 @admin.register(Parameter)
 class ParameterAdmin(admin.ModelAdmin):
@@ -50,18 +53,23 @@ class ParameterAdmin(admin.ModelAdmin):
 
 @admin.register(ProductParameter)
 class ProductParameterAdmin(admin.ModelAdmin):
-    pass
-
+    list_display = ('product_info', 'parameter', 'value')
+    search_fields = ('product_info__model', 'parameter__name', 'value')
+    list_filter = ('parameter',)
+ 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('user', 'dt', 'state', 'contact')
+    search_fields = ('user__email', 'state')
+    list_filter = ('state', 'user')
 
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    pass
-
+    list_display = ('order', 'product_info', 'quantity')
+    search_fields = ('order__id', 'product_info__model')
+    list_filter = ('order',)
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):

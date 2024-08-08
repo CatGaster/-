@@ -1,10 +1,3 @@
-# Пример API-сервиса для магазина
-
-[Документация по запросам в PostMan](https://documenter.getpostman.com/view/5037826/SVfJUrSc) 
-
-
-
-
 ## **Получить исходный код**
 
     git config --global user.name "YOUR_USERNAME"

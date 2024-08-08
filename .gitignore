@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 .idea/
 
+*.sqlite3
+env/
 
 
 # C extensions
@@ -55,14 +57,9 @@ coverage.xml
 *.pot
 
 # Django stuff:
-
-
-
-
 */migrations/*
 .log
 db.sqlite3
-
 
 # Scrapy stuff:
 .scrapy
@@ -93,6 +90,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
 
 # Spyder project settings
 .spyderproject
