@@ -4,10 +4,12 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.core.mail import send_mail 
 from django.db import IntegrityError
 from django.db.models import Q, Sum, F
 from django.http import JsonResponse
 from rest_framework import status
+from django.conf import settings
 from rest_framework.authtoken.models import Token
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -192,6 +194,14 @@ class LoginAccount(APIView):
                 if user.is_active:
                     token, _ = Token.objects.get_or_create(user=user)
 
+                    # Отправка email с токеном пользователя
+                    subject = 'Ваш токен для доступа на нашем сайте'
+                    message = f'Здравствуйте, {user.username}!\n\nВаш токен: {token.key}\nИспользуйте его для доступа к нашим сервисам.'
+                    email_from = settings.DEFAULT_FROM_EMAIL
+                    recipient_list = [user.email]
+
+                    send_mail(subject, message, email_from, recipient_list)
+
                     return JsonResponse({'Status': True, 'Token': token.key})
 
             return JsonResponse({'Status': False, 'Errors': 'Не удалось авторизовать'})
@@ -296,42 +306,34 @@ class BasketView(APIView):
     # редактировать корзину
     def post(self, request, *args, **kwargs):
         """
-               Add an items to the user's basket.
+        Add items to the user's basket.
 
-               Args:
-               - request (Request): The Django request object.
+        Args:
+        - request (Request): The Django request object.
 
-               Returns:
-               - JsonResponse: The response indicating the status of the operation and any errors.
-               """
+        Returns:
+        - JsonResponse: The response indicating the status of the operation and any errors.
+        """
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
-        items_sting = request.data.get('items')
-        if items_sting:
-            try:
-                items_dict = load_json(items_sting)
-            except ValueError:
-                return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
-            else:
-                basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
-                objects_created = 0
-                for order_item in items_dict:
-                    order_item.update({'order': basket.id})
-                    serializer = OrderItemSerializer(data=order_item)
-                    if serializer.is_valid():
-                        try:
-                            serializer.save()
-                        except IntegrityError as error:
-                            return JsonResponse({'Status': False, 'Errors': str(error)})
-                        else:
-                            objects_created += 1
-
+        items = request.data.get('items')
+        if items:
+            basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+            objects_created = 0
+            for order_item in items:
+                order_item.update({'order': basket.id})
+                serializer = OrderItemSerializer(data=order_item)
+                if serializer.is_valid():
+                    try:
+                        serializer.save()
+                    except IntegrityError as error:
+                        return JsonResponse({'Status': False, 'Errors': str(error)})
                     else:
-
-                        return JsonResponse({'Status': False, 'Errors': serializer.errors})
-
-                return JsonResponse({'Status': True, 'Создано объектов': objects_created})
+                        objects_created += 1
+                else:
+                    return JsonResponse({'Status': False, 'Errors': serializer.errors})
+            return JsonResponse({'Status': True, 'Создано объектов': objects_created})
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
     # удалить товары из корзины
@@ -408,20 +410,17 @@ class PartnerUpdate(APIView):
 
     Заголовок запроса с логином пользователя: "Authorization: Token {auth_token}" и Content-Type: "application/json"
 
-    Тело запроса с url-адресом YAML-файла со списком продуктов:
-
-    Например: {
-    url: https://raw.githubusercontent.com/netology-code/py-homework-11-part1/master/products.yaml
-    }
+    Тело запроса с url-адресом YAML-файла:
     """
 
     def post(self, request, *args, **kwargs):
         """
-        Создает или обновляет магазин и список его продуктов.
+            Создает или обновляет магазин и список его продуктов.
 
-        Возвращает:
-        - JsonResponse: Статус операции и ошибки.
+            Возвращает:
+            - JsonResponse: Статус операции и ошибки.
         """
+            
 
         if not request.user.is_authenticated:
             return Response({'Status': False, 'Error': 'Log in required'}, status=status.HTTP_403_FORBIDDEN)
@@ -447,44 +446,44 @@ class PartnerUpdate(APIView):
             data = load_yaml(stream, Loader=Loader)
 
             shop, _ = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
+            
             for category in data['categories']:
-                category_object, _ = Category.objects.update_or_create(
+                category_object, _ = Category.objects.get_or_create(
                     id=category['id'],
                     defaults={'name': category['name']}
                 )
                 category_object.shops.add(shop)
                 category_object.save()
 
-            ProductInfo.objects.filter(shop_id=shop.id).delete()
             for item in data['goods']:
                 product, _ = Product.objects.get_or_create(name=item['name'], category_id=item['category'])
 
-                product_info = ProductInfo.objects.create(
-                    product=product,
+                # Обновление или создание ProductInfo
+                product_info, created = ProductInfo.objects.update_or_create(
+                    shop=shop,
                     external_id=item['id'],
-                    model=item['model'],
-                    price=item['price'],
-                    price_rrc=item['price_rrc'],
-                    quantity=item['quantity'],
-                    shop=shop
+                    defaults={
+                        'product': product,
+                        'model': item['model'],
+                        'price': item['price'],
+                        'price_rrc': item['price_rrc'],
+                        'quantity': item['quantity'],
+                    }
                 )
 
+                # Обновляем параметры товара
                 for name, value in item['parameters'].items():
                     parameter_object, _ = Parameter.objects.get_or_create(name=name)
-                    ProductParameter.objects.create(
+                    ProductParameter.objects.update_or_create(
                         product_info=product_info,
                         parameter=parameter_object,
-                        value=value
+                        defaults={'value': value}
                     )
 
             return Response({'Status': True}, status=status.HTTP_201_CREATED)
 
         except requests.exceptions.RequestException as e:
             return Response({'Status': False, 'Error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            return Response({'Status': False, 'Error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class PartnerState(APIView):
     """
