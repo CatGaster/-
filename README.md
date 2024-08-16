@@ -78,6 +78,18 @@
 
     docker-compose logs django
 
+
+## Схема базы данных
+
+![](db_photo/DB.PNG)
+
+Tables:
+
+        User, Shop, Product, ProductInfo, ProductParametr, Basket, Order, OrderItem, Category, Parameter, Contact, ConfirmEmailToken
+
+![](db_photo/DBV.PNG)
+
+
 ## Структура файла views.py
 Для получения подробной информации о views-функциях, смотрите [API_DOCUMENTATION](API_DOCUMENTATION.md)
 ### User

@@ -80,7 +80,6 @@ class ConfirmAccount(APIView):
     Методы:
     - post
     """
-
     # Регистрация методом POST
     def post(self, request, *args, **kwargs):
         """
@@ -219,6 +218,17 @@ class LoginAccount(APIView):
 class CategoryView(ListAPIView):
     """
     Класс для просмотра категорий
+
+    Методы:
+    **get(request: Request, *args, kwargs):
+
+    Атрибуты:
+        queryset:
+        Запрос к базе данных, который получает все записи из модели Category.
+
+        serializer_class:
+        Сериализатор, используемый для преобразования объектов категории в формат 
+        JSON (CategorySerializer).
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -227,6 +237,17 @@ class CategoryView(ListAPIView):
 class ShopView(ListAPIView):
     """
     Класс для просмотра списка магазинов
+
+    Методы:
+    **get(request: Request, *args, kwargs):
+
+    Атрибуты:
+        queryset:
+        Запрос к базе данных, который получает все записи из модели Shop.
+
+        serializer_class:
+        Сериализатор, используемый для преобразования объектов магазина в формат 
+        JSON (ShopSerializer).
     """
     queryset = Shop.objects.filter(state=True)
     serializer_class = ShopSerializer
