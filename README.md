@@ -87,7 +87,6 @@ Tables:
 
         User, Shop, Product, ProductInfo, ProductParametr, Basket, Order, OrderItem, Category, Parameter, Contact, ConfirmEmailToken
 
-![](db_photo/DBV.PNG)
 
 
 ## Структура файла views.py
