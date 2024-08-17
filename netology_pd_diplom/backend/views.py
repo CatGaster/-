@@ -1,6 +1,7 @@
 import json
 import requests
 from rest_framework.request import Request
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -17,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
+
 
 from backend.strbool import strbool
 
@@ -249,6 +251,7 @@ class ShopView(ListAPIView):
         Сериализатор, используемый для преобразования объектов магазина в формат 
         JSON (ShopSerializer).
     """
+
     queryset = Shop.objects.filter(state=True)
     serializer_class = ShopSerializer
 
@@ -551,10 +554,10 @@ class PartnerState(APIView):
                - Response: The response containing the state of the partner.
                """
         if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+            return Response({'Status': False, 'Error': 'Log in required'}, status=403)
 
         if request.user.type != 'shop':
-            return JsonResponse({'Status': False, 'Error': 'Только для магазинов'}, status=403)
+            return Response({'Status': False, 'Error': 'Только для магазинов'}, status=403)
 
         shop = request.user.shop
         serializer = ShopSerializer(shop)
@@ -572,19 +575,19 @@ class PartnerState(APIView):
                - JsonResponse: The response indicating the status of the operation and any errors.
                """
         if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+            return Response({'Status': False, 'Error': 'Log in required'}, status=403)
 
         if request.user.type != 'shop':
-            return JsonResponse({'Status': False, 'Error': 'Только для магазинов'}, status=403)
+            return Response({'Status': False, 'Error': 'Только для магазинов'}, status=403)
         state = request.data.get('state')
         if state:
             try:
                 Shop.objects.filter(user_id=request.user.id).update(state=strbool(state))
-                return JsonResponse({'Status': True})
+                return Response({'Status': True})
             except ValueError as error:
-                return JsonResponse({'Status': False, 'Errors': str(error)})
+                return Response({'Status': False, 'Errors': str(error)})
 
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+        return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
 
 class PartnerOrders(APIView):
@@ -879,23 +882,25 @@ class OrderView(APIView):
 
 class ChangeUserType(APIView):
     """Проверяет, аутентифицирован ли пользователь и соответствует ли введённый пароль текущему паролю пользователя.
-        Если проверка успешна, переключает тип пользователя на "shop" или "buyer"""
+       Если проверка успешна, переключает тип пользователя на "shop" или "buyer"."""
 
     def post(self, request):
         """Обрабатывает POST-запрос для переключения типа пользователя."""
-
+        
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
+        # Получаем пароль из запроса
         password = request.data.get('password')
+        
         if not password:
             return JsonResponse({'Status': False, 'Error': 'Password is required'}, status=400)
 
         user = request.user
-        # Проверяем соответствие пароля текущему пользователю
-        user_auth = authenticate(username=user.username, password=password)
-        if user_auth is None:
-            return JsonResponse({'Status': False, 'Error': 'Invalid password'}, status=400)
+
+        # Проверяем, соответствует ли введённый пароль текущему паролю пользователя
+        if not check_password(password, user.password):
+            return JsonResponse({'Status': False, 'Error': 'Incorrect password'}, status=400)
 
         # Переключаем тип пользователя
         if user.type == 'buyer':
