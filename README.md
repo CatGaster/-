@@ -113,7 +113,7 @@ class CategoryView(ListAPIView):
 
 ### def password_reset_token_created
     по пути user/password_reset запрашивает email: your@mail и отправляет токен для смены пароля на почту
-    токен смены пароль нужно использовать по пути user/register/confirm 
+    токен смены пароль нужно использовать по пути user/password_reset/confirm 
     передавая: email: your@mail, password: new_passowrd, token: password_reset token
 
 ### def new_user_registered_signal
