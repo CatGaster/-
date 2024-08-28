@@ -570,6 +570,9 @@ class TestOrderView:
         # Arrange
         user = self.authenticate_user('shop')
 
+        # Удаляем все заказы пользователя перед тестом
+        Order.objects.filter(user=user).delete()
+        
         # Создаем несколько заказов
         for _ in range(3):
             baker.make('backend.Order', user=user)

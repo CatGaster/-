@@ -57,7 +57,7 @@
 
 Убедитесь, что миграции применены, выполнив:
 
-    docker-compose exec django_app python manage.py migrate
+    docker-compose exec django python manage.py migrate
 
 ### Создайте суперпользователя:
 

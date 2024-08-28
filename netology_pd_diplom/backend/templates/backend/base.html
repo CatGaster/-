@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Site</title>
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+</head>
+<body>
+    <header>
+        <img src="{% static 'images/logo.png' %}" alt="Logo">
+    </header>
+    <main>
+        <h1>Welcome to My Site!</h1>
+        <button id="myButton">Click Me</button>
+    </main>
+    <footer>
+        <script src="{% static 'scripts/main.js' %}"></script>
+    </footer>
+</body>
+</html>
