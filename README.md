@@ -45,6 +45,16 @@
     CELERY_RESULT_BACKEND=redis://redis:6379/0
     CELERY_TIMEZONE=UTC 
 
+## Sentry settings
+    SENTRY_DSN=your_sentry_dsn
+    SENTRY_ENVIRONMENT=your_sentry_status
+    SENTRY_RELEASE=release_version
+
+## Google settings
+    # использовать для добавления гугл авторизации
+    GOOGLE_CLIENT_ID=your_google_client_id
+    GOOGLE_CLIENT_SECRET=your_google_client_secret
+
 ## Запуск проекта
 
 ### В корне вашего проекта выполните команду:

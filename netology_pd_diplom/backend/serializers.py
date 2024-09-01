@@ -19,9 +19,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'last_name', 'email', 'company', 'position', 'contacts')
-        read_only_fields = ('id',)
-
+        fields = ('id', 'first_name', 'last_name', 'email', 'company', 'position', 'contacts', 'google_id', 'picture')
+        read_only_fields = ('id', 'google_id', 'picture')
+        
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

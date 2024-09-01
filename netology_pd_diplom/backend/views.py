@@ -9,7 +9,8 @@ from django.core.validators import URLValidator
 from django.core.mail import send_mail 
 from django.db import IntegrityError
 from django.db.models import Q, Sum, F
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render
 from rest_framework import status
 from django.conf import settings
 from rest_framework.authtoken.models import Token
@@ -19,7 +20,6 @@ from rest_framework.views import APIView
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
 
-
 from backend.strbool import strbool
 
 from backend.models import User, Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
@@ -27,6 +27,18 @@ from backend.models import User, Shop, Category, Product, ProductInfo, Parameter
 from backend.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderItemSerializer, OrderSerializer, ContactSerializer
 from backend.signals import new_user_registered, new_order
+
+
+
+def index(request):
+    return render(request, 'index.html')
+
+
+def trigger_error(request):
+    # Пример ошибки для проверки Sentry
+    division_by_zero = 1 / 0
+    return HttpResponse("This will never be displayed due to the error above.")
+
 
 class RegisterAccount(APIView):
     """
@@ -187,14 +199,14 @@ class LoginAccount(APIView):
     # Авторизация методом POST
     def post(self, request, *args, **kwargs):
         """
-                Authenticate a user.
+        Authenticate a user.
 
-                Args:
-                    request (Request): The Django request object.
+        Args:
+            request (Request): The Django request object.
 
-                Returns:
-                    JsonResponse: The response indicating the status of the operation and any errors.
-                """
+        Returns:
+            JsonResponse: The response indicating the status of the operation and any errors.
+        """
         if {'email', 'password'}.issubset(request.data):
             user = authenticate(request, username=request.data['email'], password=request.data['password'])
 

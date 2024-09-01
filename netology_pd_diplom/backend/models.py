@@ -5,6 +5,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_rest_passwordreset.tokens import get_token_generator
 
+
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
     ('new', 'Новый'),
@@ -23,7 +24,6 @@ USER_TYPE_CHOICES = (
 
 
 # Create your models here.
-
 
 class UserManager(BaseUserManager):
     """
@@ -61,12 +61,12 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
+
 class User(AbstractUser):
     """
-    Стандартная модель пользователей
+    Расширенная модель пользователей для поддержки аутентификации через Google и других социальных платформ.
     """
     REQUIRED_FIELDS = []
-    objects = UserManager()
     USERNAME_FIELD = 'email'
     email = models.EmailField(_('email address'), unique=True)
     company = models.CharField(verbose_name='Компания', max_length=40, blank=True)
@@ -90,6 +90,10 @@ class User(AbstractUser):
         ),
     )
     type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=5, default='buyer')
+
+    # Дополнительные поля для хранения данных из Google (если необходимо)
+    google_id = models.CharField(max_length=255, blank=True, null=True)
+    picture = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'

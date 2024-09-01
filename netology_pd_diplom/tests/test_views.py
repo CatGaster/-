@@ -577,12 +577,19 @@ class TestOrderView:
         for _ in range(3):
             baker.make('backend.Order', user=user)
 
+        # Проверка количества заказов в базе данных
+        orders = Order.objects.filter(user=user)
+        print(f"Создано заказов: {orders.count()}")  # Должно вывести 3
+        
         # Act
         response = self.client.get(self.url)
 
+        # Вывод ответа сервера
+        print(f"Ответ API: {response.data}")
+
         # Assert
         assert response.status_code == 200
-        assert len(response.data) == 3  # Проверяем, что возвращается 3 заказа
+        assert len(response.data) == 3, f"Ожидалось 3 заказа, но получено: {len(response.data)}"
 
     def test_get_orders_unauthenticated(self):
         # Act
