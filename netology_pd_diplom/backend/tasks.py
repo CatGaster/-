@@ -1,9 +1,8 @@
 from celery import shared_task
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
+from django.template.loader import render_to_string
 from backend.models import ConfirmEmailToken, User
-
-
 
 
 @shared_task
@@ -64,4 +63,21 @@ def send_google_welcome_email(user_email, first_name, picture_url):
         """, 
         "text/html"
     )
+    msg.send()
+
+
+@shared_task
+def send_avatar_uploaded_email(user_email, avatar_url):
+    """
+    Отправляет письмо при загрузке нового аватара.
+    """
+    subject = "Ваш аватар успешно загружен"
+    html_content = render_to_string('emails/avatar_uploaded_email.html', {'avatar_url': avatar_url})
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=html_content,
+        from_email=settings.EMAIL_HOST_USER,
+        to=[user_email]
+    )
+    msg.attach_alternative(html_content, "text/html")
     msg.send()

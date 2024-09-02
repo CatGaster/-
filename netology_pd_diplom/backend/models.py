@@ -5,6 +5,9 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_rest_passwordreset.tokens import get_token_generator
 
+from imagekit.models import ProcessedImageField
+from imagekit.processors import ResizeToFill
+
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
@@ -102,6 +105,22 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = "Список пользователей"
         ordering = ('email',)
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    avatar = ProcessedImageField(
+        upload_to='avatars/',
+        processors=[ResizeToFill(200, 200)],
+        format='JPEG',
+        options={'quality': 85},
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return self.user.username
+
 
 
 class Shop(models.Model):

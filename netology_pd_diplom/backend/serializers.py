@@ -1,7 +1,7 @@
 # Верстальщик
 from rest_framework import serializers
 
-from backend.models import User, Category, Shop, ProductInfo, Product, ProductParameter, OrderItem, Order, Contact
+from backend.models import User, UserProfile, Category, Shop, ProductInfo, Product, ProductParameter, OrderItem, Order, Contact
 
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -87,3 +87,12 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ('id', 'ordered_items', 'state', 'dt', 'total_sum', 'contact',)
         read_only_fields = ('id',)
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['id', 'user', 'avatar']
+        extra_kwargs = {
+            'user': {'read_only': True},  # Поле 'user' доступно только для чтения
+        }

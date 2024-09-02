@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Avatar</title>
+</head>
+<body>
+    <h1>Update Your Avatar</h1>
+    <form id="avatar-form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="id_avatar">Choose an avatar:</label>
+        <input type="file" id="id_avatar" name="avatar" accept="image/*" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    <div id="response-message"></div>
+
+    <script>
+        // Обработка отправки формы через AJAX
+        document.getElementById('avatar-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('{% url "update-avatar" %}', {  
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseMessage = document.getElementById('response-message');
+                if (data.Status) {
+                    responseMessage.textContent = 'Avatar updated successfully!';
+                    // Отображение обновленного аватара
+                    if (data.Avatar) {
+                        const avatarImg = document.createElement('img');
+                        avatarImg.src = data.Avatar;
+                        avatarImg.alt = 'Updated Avatar';
+                        avatarImg.style.width = '100px';
+                        avatarImg.style.height = '100px';
+                        responseMessage.appendChild(avatarImg);
+                    }
+                } else {
+                    responseMessage.textContent = 'Error: ' + JSON.stringify(data.Errors);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body> 
+</html>

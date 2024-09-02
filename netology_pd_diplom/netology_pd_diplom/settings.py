@@ -17,6 +17,9 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 
+load_dotenv()
+
+
 sentry_sdk.init(
     dsn=os.getenv('SENTRY_DSN'),
     integrations=[DjangoIntegration()],
@@ -25,7 +28,6 @@ sentry_sdk.init(
     release=os.getenv('SENTRY_RELEASE', 'netology_pd_diplom@1.0.0'),  # Версия приложения
 )
 
-load_dotenv()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -62,6 +64,7 @@ INSTALLED_APPS = [
     'social_django',
     'cachalot',
     'drf_spectacular',
+    'imagekit',
 ]
 
 MIDDLEWARE = [
@@ -191,6 +194,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 #     os.path.join(BASE_DIR, 'static'),
 # ]
 
+# Настройки для медиафайлов
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR + '/media'
 
 
 AUTH_USER_MODEL = 'backend.User'

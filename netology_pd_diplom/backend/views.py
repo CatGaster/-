@@ -22,7 +22,9 @@ from yaml import load as load_yaml, Loader
 
 from backend.strbool import strbool
 
-from backend.models import User, Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
+from .forms import UserProfileForm
+
+from backend.models import User, UserProfile, Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
     Contact, ConfirmEmailToken
 from backend.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderItemSerializer, OrderSerializer, ContactSerializer
@@ -31,11 +33,13 @@ from backend.signals import new_user_registered, new_order
 
 
 def index(request):
+    """для работы с гугл html"""
     return render(request, 'index.html')
 
 
+
 def trigger_error(request):
-    # Пример ошибки для проверки Sentry
+    """Пример ошибки для тестирования Sentry"""
     division_by_zero = 1 / 0
     return HttpResponse("This will never be displayed due to the error above.")
 
@@ -923,3 +927,29 @@ class ChangeUserType(APIView):
             user.type = 'buyer'
             user.save()
             return JsonResponse({'Status': True, 'Message': 'User type updated to buyer'})
+        
+
+
+class UpdateAvatar(APIView):
+    """Обрабатывает POST-запрос для обновления аватара пользователя.
+       Если пользователь не имеет профиля, создаёт его и обновляет аватар."""
+
+    def post(self, request):
+        """Обрабатывает POST-запрос для обновления аватара пользователя."""
+        
+        # Проверка аутентификации пользователя
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+        form = UserProfileForm(request.POST, request.FILES, instance=profile)
+
+        # Валидация и сохранение формы
+        if form.is_valid():
+            form.save()
+            avatar_url = profile.avatar.url if profile.avatar else None
+            return JsonResponse({'Status': True, 'Avatar': avatar_url})
+
+        # Ответ с ошибками валидации формы
+        return JsonResponse({'Status': False, 'Errors': form.errors})

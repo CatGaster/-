@@ -22,4 +22,5 @@ django-baton==4.1.0
 django-cachalot==2.6.3
 django-redis==5.4.0
 sentry-sdk==2.13.0
+django-imagekit==5.0.0
 

@@ -108,6 +108,7 @@ class LoginAccount(APIView):
 class ChangeUserType(APIView):
 class ContactView(APIView):
 class AccountDetails(APIView):
+class UpdateAvatar(APIView):
 ### Partner
 class PartnerUpdate(APIView):
 class PartnerState(APIView):
@@ -122,12 +123,22 @@ class CategoryView(ListAPIView):
 ## Структура файла signals.py
 
 ### def password_reset_token_created
-    по пути user/password_reset запрашивает email: your@mail и отправляет токен для смены пароля на почту
+    По пути user/password_reset запрашивает email: your@mail и отправляет токен для смены пароля на почту
     токен смены пароль нужно использовать по пути user/password_reset/confirm 
     передавая: email: your@mail, password: new_passowrd, token: password_reset token
 
 ### def new_user_registered_signal
-    при выполнении регистрации отправляет письмо с токеном на почту для подтверждения регистрации
+    При выполнении регистрации отправляет письмо с токеном на почту для подтверждения регистрации
 
 ### def new_order_signal
-    отправляет письмо при обновление статуса заказа
+    Отправляет письмо при обновление статуса заказа
+
+### def create_user_profile
+    При создании объекта User (created=True) создаётся новый UserProfile, связанный с этим пользователем.
+
+### def save_user_profile
+    Сохраняет связанный с пользователем UserProfile при каждом сохранении объекта User.
+
+### def google_user_registered_signal
+    Обрабатывает создание пользователей, зарегистрированных через Google. Он отправляет приветственное письмо, если заполнено поле google_id.
+

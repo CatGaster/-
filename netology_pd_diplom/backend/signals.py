@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver, Signal
 from django_rest_passwordreset.signals import reset_password_token_created
 from .tasks import send_password_reset_email, send_new_user_email, send_order_status_update_email, send_google_welcome_email
-from backend.models import ConfirmEmailToken, User
+from backend.models import ConfirmEmailToken, User, UserProfile
 
 
 new_user_registered = Signal()
@@ -40,6 +40,21 @@ def new_order_signal(user_id, **kwargs):
     user = User.objects.get(id=user_id)
     send_order_status_update_email.delay(user_email=user.email)
 
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """
+    Обеспечивает сохранение изменений в объекте User в соответствующий UserProfile
+    """
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """
+    Сохраняет связанный с пользователем UserProfile при каждом сохранении объекта User.
+    """
+    instance.userprofile.save()
 
 
 @receiver(post_save, sender=User)
