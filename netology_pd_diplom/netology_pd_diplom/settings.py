@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'cachalot',
     'drf_spectacular',
     'imagekit',
+    'silk',
 ]
 
 MIDDLEWARE = [
@@ -75,6 +76,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'silk.middleware.SilkyMiddleware',
 ]
 
 ROOT_URLCONF = 'netology_pd_diplom.urls'

@@ -35,6 +35,7 @@ urlpatterns = [
     path('sentry-debug/', trigger_error),
     path('auth/', include('social_django.urls', namespace='social')),
     path('google/register', index, name='index'),
+    path('silk/', include('silk.urls', namespace='silk')),
 ]
 
 if settings.DEBUG:
