@@ -10,21 +10,20 @@
     <h1>Update Your Avatar</h1>
     <form id="avatar-form" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <label for="id_avatar">Choose an avatar:</label>
-        <input type="file" id="id_avatar" name="avatar" accept="image/*" required>
+        {{ form.as_p }}  <!-- Отображение формы Django -->
         <button type="submit">Upload</button>
     </form>
 
     <div id="response-message"></div>
 
     <script>
-        // Обработка отправки формы через AJAX
         document.getElementById('avatar-form').addEventListener('submit', function (e) {
             e.preventDefault();
 
             const formData = new FormData(this);
+            const url = '{% url "user-avatar" %}';
 
-            fetch('{% url "update-avatar" %}', {  
+            fetch(url, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -35,9 +34,9 @@
             .then(response => response.json())
             .then(data => {
                 const responseMessage = document.getElementById('response-message');
+                responseMessage.innerHTML = '';
                 if (data.Status) {
                     responseMessage.textContent = 'Avatar updated successfully!';
-                    // Отображение обновленного аватара
                     if (data.Avatar) {
                         const avatarImg = document.createElement('img');
                         avatarImg.src = data.Avatar;
@@ -53,5 +52,5 @@
             .catch(error => console.error('Error:', error));
         });
     </script>
-</body> 
+</body>
 </html>

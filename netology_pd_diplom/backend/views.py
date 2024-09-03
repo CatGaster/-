@@ -788,6 +788,7 @@ class OrderView(APIView):
                """
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+        
         order = Order.objects.filter(
             user_id=request.user.id).exclude(state='basket').prefetch_related(
             'ordered_items__product_info__product__category',
@@ -932,7 +933,13 @@ class ChangeUserType(APIView):
 
 class UpdateAvatar(APIView):
     """Обрабатывает POST-запрос для обновления аватара пользователя.
-       Если пользователь не имеет профиля, создаёт его и обновляет аватар."""
+       Если пользователь не имеет профиля, создаёт его и обновляет аватар.
+       
+        Методы:
+        - get
+        - post
+        
+       """
 
     def post(self, request):
         """Обрабатывает POST-запрос для обновления аватара пользователя."""
@@ -953,3 +960,13 @@ class UpdateAvatar(APIView):
 
         # Ответ с ошибками валидации формы
         return JsonResponse({'Status': False, 'Errors': form.errors})
+    
+    def get(self, request):
+        """Обрабатывает GET-запрос и возвращает HTML форму для обновления аватара."""
+
+        # Проверка аутентификации пользователя
+        if not request.user.is_authenticated:
+            return render(request, 'auth_required.html') 
+        
+        form = UserProfileForm()
+        return render(request, 'update_avatar.html', {'form': form})

@@ -226,8 +226,6 @@ CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE')
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 
-
-
 BATON = {
     'SITE_HEADER': 'Административная панель',
     'SITE_TITLE': 'Административная панель',
@@ -255,8 +253,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/minute',  # Ограничение для анонимных пользователей
-        'user': '20/minute',   # Ограничение для аутентифицированных пользователей
+        'anon': '200/minute',  # Ограничение для анонимных пользователей (в данный момент показатель увеличен для отработки pytest)
+        'user': '200/minute',   # Ограничение для аутентифицированных пользователей (в данный момент показатель увеличен для отработки pytest)
     },
 
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
